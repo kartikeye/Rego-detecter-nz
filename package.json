@@ -1,0 +1,15 @@
+{
+  "name": "rego-detector-nz",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "concurrently -n VISION,BACKEND,FRONTEND -c cyan,green,magenta \"npm run dev:vision\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:vision": "cd services/vision-python && .\\.venv\\Scripts\\python.exe -m uvicorn main:app --reload --port 8001",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev -- --host",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

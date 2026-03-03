@@ -1,0 +1,81 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, system-ui, Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #f4f6f8;
+  color: #111827;
+}
+
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+button {
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.video {
+  width: 100%;
+  max-width: 720px;
+  border-radius: 12px;
+  background: #000;
+  border: 1px solid #d1d5db;
+}
+
+.hidden {
+  display: none;
+}
+
+.card {
+  margin-top: 16px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  border: 1px solid #9ca3af;
+}
+
+.badge-green {
+  color: #065f46;
+  border-color: #10b981;
+}
+
+.badge-amber {
+  color: #92400e;
+  border-color: #f59e0b;
+}
+
+.badge-red {
+  color: #991b1b;
+  border-color: #ef4444;
+}
+
+.error {
+  color: #991b1b;
+}
