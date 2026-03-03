@@ -53,3 +53,36 @@
 ### Current status
 - End-to-end TypeScript MVP scaffold is ready and runnable locally.
 - App can capture webcam frame, call backend, use mock vision + mock lookup, and display matching result.
+
+## 2026-03-04 03:35:05 NZDT
+
+### What we did in this session
+1. Reviewed live behavior from browser screenshots and identified issue:
+	- App was showing generic/mock-style output and not behaving like true frame-dependent processing.
+2. Upgraded vision pipeline from fixed output to real frame analysis:
+	- Added vehicle-first detection flow in `services/vision-python/main.py`.
+	- Added OCR attempt for rego only after vehicle is detected.
+	- Added color estimation and detection notes for clearer debugging.
+3. Added/updated vision dependencies:
+	- Updated `services/vision-python/requirements.txt` with OpenCV, YOLO (`ultralytics`), EasyOCR.
+	- Resolved dependency conflict by pinning `numpy==2.1.1`.
+4. Updated backend behavior to avoid false positives:
+	- In `backend/src/index.ts`, lookup/scoring now runs only when rego is actually detected.
+	- Added explicit response states:
+	  - `No Vehicle Detected`
+	  - `Rego Not Detected`
+5. Added reliability/fail-fast handling:
+	- Implemented backend timeout when calling vision service.
+	- Returned safe JSON response on timeout/error instead of hanging request.
+6. Updated frontend rendering for new statuses:
+	- Updated `frontend/src/App.tsx` and `frontend/src/styles.css` to show neutral badges and nullable lookup values.
+7. Updated docs to match latest behavior:
+	- Updated `README.md` and `Docs/how-to-run.md` with real processing notes and first-run model download caveat.
+8. Verification performed:
+	- Confirmed service health endpoints.
+	- Confirmed `/api/scan` returns immediate structured response for invalid/non-car input.
+	- Restarted stack and revalidated frontend/backend availability.
+
+### Current status
+- Project now has vehicle-first processing logic and safer scan response behavior.
+- Remaining next-step work (for tomorrow): improve real-world plate read accuracy and integrate legal real NZ lookup source.
