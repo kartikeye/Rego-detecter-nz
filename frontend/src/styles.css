@@ -76,6 +76,11 @@ button:disabled {
   border-color: #ef4444;
 }
 
+.badge-gray {
+  color: #374151;
+  border-color: #9ca3af;
+}
+
 .error {
   color: #991b1b;
 }

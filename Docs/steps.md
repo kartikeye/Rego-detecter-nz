@@ -17,3 +17,39 @@
 
 ### Current status
 - Repository is cloned successfully and ready for next development steps.
+
+## 2026-03-04 02:19:55 NZDT
+
+### What we did since cloning
+1. Brainstormed and finalized product direction:
+	- Live webcam-based NZ rego detection.
+	- Vehicle details lookup via provider abstraction.
+	- Camera-vs-record matching workflow to automate manual verification.
+2. Created planning documentation:
+	- Added full MVP architecture and phased roadmap in `Docs/Plan-of-action.md`.
+3. Switched implementation to TypeScript + ESM:
+	- Backend: Node.js + Express + TypeScript (import/export enabled).
+	- Frontend: React + Vite + TypeScript.
+	- Vision service: Python FastAPI mock service.
+4. Implemented Phase 1 scaffold:
+	- Added backend scan API and mock vehicle lookup provider.
+	- Added scoring logic (`Likely Same`, `Manual Review`, `Possible Mismatch`).
+	- Added frontend webcam UI with `Start Camera` and `Capture & Scan`.
+	- Added shared type contract files.
+5. Added root-level run orchestration:
+	- Added root `package.json` with one-command startup (`npm run dev`) using concurrently.
+	- Added `.env.example` for backend and frontend.
+6. Installed dependencies and verified services:
+	- Backend, frontend, and Python dependencies installed.
+	- Health checks verified:
+	  - Backend `http://localhost:8000/health` -> 200
+	  - Vision `http://localhost:8001/health` -> 200
+	  - Frontend `http://localhost:5173` -> 200
+7. Improved git hygiene:
+	- Updated `.gitignore` to exclude Python virtualenv and cache artifacts (`.venv/`, `__pycache__/`, etc.).
+8. Added run and testing guide:
+	- Wrote complete startup + testing instructions in `Docs/how-to-run.md`.
+
+### Current status
+- End-to-end TypeScript MVP scaffold is ready and runnable locally.
+- App can capture webcam frame, call backend, use mock vision + mock lookup, and display matching result.

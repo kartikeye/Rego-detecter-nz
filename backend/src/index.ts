@@ -21,26 +21,83 @@ app.get("/health", (_req, res) => {
 app.post("/api/scan", async (req, res) => {
   try {
     const frameDataUrl = typeof req.body?.frameDataUrl === "string" ? req.body.frameDataUrl : "";
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
 
     const visionResponse = await fetch(`${visionServiceUrl}/vision/scan`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ frameDataUrl })
+      body: JSON.stringify({ frameDataUrl }),
+      signal: controller.signal
     });
+    clearTimeout(timeout);
 
     if (!visionResponse.ok) {
-      return res.status(502).json({ message: "Vision service failed" });
+      return res.status(502).json({
+        vehicleDetected: false,
+        vehicleConfidence: 0,
+        detectedRego: "",
+        regoConfidence: 0,
+        lookupDetails: null,
+        visualAttributes: { make: null, model: null, color: null },
+        matchScore: 0,
+        status: "No Vehicle Detected",
+        notes: ["Vision service failed"]
+      });
     }
 
     const vision = (await visionResponse.json()) as VisionScanResult;
+    if (!vision.vehicleDetected) {
+      return res.json({
+        vehicleDetected: false,
+        vehicleConfidence: 0,
+        detectedRego: "",
+        regoConfidence: 0,
+        lookupDetails: null,
+        visualAttributes: {
+          make: null,
+          model: null,
+          color: null
+        },
+        matchScore: 0,
+        status: "No Vehicle Detected",
+        notes: vision.notes
+      });
+    }
+
+    if (!vision.rego) {
+      return res.json({
+        vehicleDetected: true,
+        vehicleConfidence: vision.vehicleConfidence,
+        detectedRego: "",
+        regoConfidence: 0,
+        lookupDetails: null,
+        visualAttributes: {
+          make: vision.observedMake,
+          model: vision.observedModel,
+          color: vision.observedColor
+        },
+        matchScore: 0,
+        status: "Rego Not Detected",
+        notes: vision.notes
+      });
+    }
+
     const lookup = await lookupProvider.lookupByRego(vision.rego);
     const result = buildScanResult(vision, lookup);
 
     return res.json(result);
   } catch (error) {
-    return res.status(500).json({
-      message: "Scan failed",
-      error: error instanceof Error ? error.message : "Unknown error"
+    return res.status(200).json({
+      vehicleDetected: false,
+      vehicleConfidence: 0,
+      detectedRego: "",
+      regoConfidence: 0,
+      lookupDetails: null,
+      visualAttributes: { make: null, model: null, color: null },
+      matchScore: 0,
+      status: "No Vehicle Detected",
+      notes: [error instanceof Error ? `Vision timeout/error: ${error.message}` : "Vision timeout/error"]
     });
   }
 });

@@ -40,6 +40,8 @@ export const buildScanResult = (
   }
 
   return {
+    vehicleDetected: vision.vehicleDetected,
+    vehicleConfidence: vision.vehicleConfidence,
     detectedRego: vision.rego,
     regoConfidence: vision.regoConfidence,
     lookupDetails: lookup,
@@ -50,6 +52,6 @@ export const buildScanResult = (
     },
     matchScore,
     status,
-    notes
+    notes: [...vision.notes, ...notes]
   };
 };

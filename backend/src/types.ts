@@ -21,23 +21,28 @@ export interface VehicleLookupProvider {
 }
 
 export interface VisionScanResult {
+  vehicleDetected: boolean;
+  vehicleConfidence: number;
   rego: string;
   regoConfidence: number;
   observedMake: string | null;
   observedModel: string | null;
   observedColor: string | null;
+  notes: string[];
 }
 
 export interface ScanApiResult {
+  vehicleDetected: boolean;
+  vehicleConfidence: number;
   detectedRego: string;
   regoConfidence: number;
-  lookupDetails: VehicleLookupResult;
+  lookupDetails: VehicleLookupResult | null;
   visualAttributes: {
     make: string | null;
     model: string | null;
     color: string | null;
   };
   matchScore: number;
-  status: "Likely Same" | "Manual Review" | "Possible Mismatch";
+  status: "No Vehicle Detected" | "Rego Not Detected" | "Likely Same" | "Manual Review" | "Possible Mismatch";
   notes: string[];
 }

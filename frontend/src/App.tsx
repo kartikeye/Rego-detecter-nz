@@ -1,6 +1,8 @@
 import { useMemo, useRef, useState } from "react";
 
 interface ScanResponse {
+  vehicleDetected: boolean;
+  vehicleConfidence: number;
   detectedRego: string;
   regoConfidence: number;
   lookupDetails: {
@@ -10,14 +12,14 @@ interface ScanResponse {
     color: string | null;
     stolenFlag: "true" | "false" | "unknown";
     source: string;
-  };
+  } | null;
   visualAttributes: {
     make: string | null;
     model: string | null;
     color: string | null;
   };
   matchScore: number;
-  status: "Likely Same" | "Manual Review" | "Possible Mismatch";
+  status: "No Vehicle Detected" | "Rego Not Detected" | "Likely Same" | "Manual Review" | "Possible Mismatch";
   notes: string[];
 }
 
@@ -34,6 +36,8 @@ export default function App() {
 
   const statusClass = useMemo(() => {
     if (!result) return "badge";
+    if (result.status === "No Vehicle Detected") return "badge badge-gray";
+    if (result.status === "Rego Not Detected") return "badge badge-gray";
     if (result.status === "Likely Same") return "badge badge-green";
     if (result.status === "Manual Review") return "badge badge-amber";
     return "badge badge-red";
@@ -126,10 +130,16 @@ export default function App() {
         <section className="card">
           <h2>Scan Result</h2>
           <p>
+            <strong>Vehicle Detected:</strong> {result.vehicleDetected ? "Yes" : "No"} ({Math.round(result.vehicleConfidence * 100)}%)
+          </p>
+          <p>
             <strong>Detected Rego:</strong> {result.detectedRego} ({Math.round(result.regoConfidence * 100)}%)
           </p>
           <p>
-            <strong>Lookup:</strong> {result.lookupDetails.make ?? "-"} {result.lookupDetails.model ?? "-"} {result.lookupDetails.color ?? "-"}
+            <strong>Lookup:</strong>{" "}
+            {result.lookupDetails
+              ? `${result.lookupDetails.make ?? "-"} ${result.lookupDetails.model ?? "-"} ${result.lookupDetails.color ?? "-"}`
+              : "-"}
           </p>
           <p>
             <strong>Observed:</strong> {result.visualAttributes.make ?? "-"} {result.visualAttributes.model ?? "-"} {result.visualAttributes.color ?? "-"}
@@ -141,10 +151,10 @@ export default function App() {
             <strong>Status:</strong> <span className={statusClass}>{result.status}</span>
           </p>
           <p>
-            <strong>Stolen Flag:</strong> {result.lookupDetails.stolenFlag}
+            <strong>Stolen Flag:</strong> {result.lookupDetails?.stolenFlag ?? "-"}
           </p>
           <p>
-            <strong>Source:</strong> {result.lookupDetails.source}
+            <strong>Source:</strong> {result.lookupDetails?.source ?? "-"}
           </p>
           {result.notes.length > 0 ? (
             <ul>

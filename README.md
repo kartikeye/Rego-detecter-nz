@@ -1,6 +1,6 @@
 # Rego-detecter-nz
 
-Phase 1 scaffold for an end-to-end mock flow.
+Phase 1 scaffold with real frame-dependent processing.
 
 ## Tech stack
 - Frontend: React + Vite + TypeScript (ESM)
@@ -12,8 +12,10 @@ All Node apps are configured with modern module syntax (`"type": "module"`) and 
 ## Flow
 - React frontend captures webcam frame.
 - Express backend receives frame and orchestrates scan.
-- Python FastAPI service returns mocked rego and vehicle attributes.
-- Backend compares camera-observed attributes with lookup provider data.
+- Python FastAPI service detects if a vehicle is present in the frame.
+- If vehicle is found, OCR is attempted for rego text and color is estimated.
+- Backend only performs lookup/scoring when rego is detected.
+- If no vehicle or no rego is found, UI returns explicit status for manual action.
 
 ## Project structure
 
@@ -52,6 +54,8 @@ This starts all services together:
 - Vision API on `http://localhost:8001`
 - Backend API on `http://localhost:8000`
 - Frontend on `http://localhost:5173`
+
+First vision run may take longer because YOLO model weights are downloaded automatically.
 
 ## 1) Run Python vision service
 
