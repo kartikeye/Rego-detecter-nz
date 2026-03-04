@@ -34,6 +34,16 @@ const db: Record<string, Omit<VehicleLookupResult, "source" | "fetchedAt" | "con
     bodyType: "Sedan",
     stolenFlag: "false",
     notes: ["Demo record for Audi A6 verification"]
+  },
+  QEU878: {
+    rego: "QEU878",
+    make: "Toyota",
+    model: "Prius",
+    year: null,
+    color: "Black",
+    bodyType: "Sedan",
+    stolenFlag: "false",
+    notes: ["Demo record for Toyota Prius black sedan"]
   }
 };
 
