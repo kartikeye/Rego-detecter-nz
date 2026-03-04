@@ -84,3 +84,15 @@ button:disabled {
 .error {
   color: #991b1b;
 }
+
+.hint {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: #374151;
+}
+
+.warning {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: #92400e;
+}

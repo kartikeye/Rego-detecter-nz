@@ -6,13 +6,23 @@ from typing import Any
 import cv2
 import easyocr
 import numpy as np
+import torch
 from fastapi import FastAPI
+from PIL import Image
 from pydantic import BaseModel
+from transformers import CLIPModel, CLIPProcessor
 from ultralytics import YOLO
 
 
 class VisionScanRequest(BaseModel):
     frameDataUrl: str | None = None
+    classificationCandidates: list["VehicleClassificationCandidate"] | None = None
+
+
+class VehicleClassificationCandidate(BaseModel):
+    make: str
+    model: str
+    bodyType: str | None = None
 
 
 class VisionScanResponse(BaseModel):
@@ -30,6 +40,8 @@ app = FastAPI(title="Rego Detector Vision Service", version="0.2.0")
 
 _vehicle_model: YOLO | None = None
 _ocr_reader: easyocr.Reader | None = None
+_clip_model: CLIPModel | None = None
+_clip_processor: CLIPProcessor | None = None
 _load_lock = threading.Lock()
 
 VEHICLE_CLASS_IDS = {2, 3, 5, 7}
@@ -72,6 +84,23 @@ def _load_ocr_reader() -> easyocr.Reader:
             _ocr_reader = easyocr.Reader(["en"], gpu=False)
 
     return _ocr_reader
+
+
+def _load_clip() -> tuple[CLIPModel, CLIPProcessor, str]:
+    global _clip_model, _clip_processor
+
+    if _clip_model is not None and _clip_processor is not None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        return _clip_model, _clip_processor, device
+
+    with _load_lock:
+        if _clip_model is None or _clip_processor is None:
+            _clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+            _clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    _clip_model.to(device)
+    return _clip_model, _clip_processor, device
 
 
 def _detect_primary_vehicle(image: np.ndarray) -> tuple[bool, float, tuple[int, int, int, int] | None]:
@@ -154,6 +183,47 @@ def _extract_rego_text(image: np.ndarray, box: tuple[int, int, int, int] | None)
     return best_rego, best_conf
 
 
+def _candidate_prompt(candidate: VehicleClassificationCandidate) -> str:
+    body = f" {candidate.bodyType}" if candidate.bodyType else ""
+    return f"a photo of a {candidate.make} {candidate.model}{body}"
+
+
+def _estimate_make_model(
+    image: np.ndarray,
+    box: tuple[int, int, int, int] | None,
+    candidates: list[VehicleClassificationCandidate],
+) -> tuple[str | None, str | None, float]:
+    if not candidates:
+        return None, None, 0.0
+
+    clip_model, clip_processor, device = _load_clip()
+
+    crop = image
+    if box is not None:
+        x1, y1, x2, y2 = box
+        maybe_crop = image[max(y1, 0):max(y2, 0), max(x1, 0):max(x2, 0)]
+        if maybe_crop.size > 0:
+            crop = maybe_crop
+
+    rgb = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)
+    pil_image = Image.fromarray(rgb)
+
+    prompts = [_candidate_prompt(candidate) for candidate in candidates]
+    inputs = clip_processor(text=prompts, images=pil_image, return_tensors="pt", padding=True)
+    inputs = {key: value.to(device) for key, value in inputs.items()}
+
+    with torch.no_grad():
+        outputs = clip_model(**inputs)
+        logits_per_image = outputs.logits_per_image[0]
+        probs = logits_per_image.softmax(dim=0)
+
+    best_index = int(torch.argmax(probs).item())
+    best_confidence = float(probs[best_index].item())
+    best = candidates[best_index]
+
+    return best.make, best.model, best_confidence
+
+
 @app.get("/health")
 def health():
     return {
@@ -161,6 +231,7 @@ def health():
         "service": "vision-python",
         "vehicleModelLoaded": _vehicle_model is not None,
         "ocrModelLoaded": _ocr_reader is not None,
+        "clipModelLoaded": _clip_model is not None,
     }
 
 
@@ -206,6 +277,20 @@ def scan(payload: VisionScanRequest):
         )
 
     observed_color = _estimate_color_name(frame, vehicle_box) if vehicle_box else None
+
+    observed_make: str | None = None
+    observed_model: str | None = None
+    candidates = payload.classificationCandidates or []
+    if candidates:
+        try:
+            observed_make, observed_model, make_model_confidence = _estimate_make_model(frame, vehicle_box, candidates)
+            if make_model_confidence < 0.35:
+                observed_make = None
+                observed_model = None
+                notes.append("Camera make/model confidence too low")
+        except Exception as error:
+            notes.append(f"Make/model classifier unavailable: {error}")
+
     try:
         rego, rego_confidence = _extract_rego_text(frame, vehicle_box)
     except Exception as error:
@@ -220,8 +305,8 @@ def scan(payload: VisionScanRequest):
         vehicleConfidence=round(vehicle_confidence, 3),
         rego=rego,
         regoConfidence=round(rego_confidence, 3),
-        observedMake=None,
-        observedModel=None,
+        observedMake=observed_make,
+        observedModel=observed_model,
         observedColor=observed_color,
         notes=notes,
     )

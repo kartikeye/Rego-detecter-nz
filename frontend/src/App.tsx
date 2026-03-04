@@ -43,6 +43,11 @@ export default function App() {
     return "badge badge-red";
   }, [result]);
 
+  const hasVisionTimeout = useMemo(() => {
+    if (!result) return false;
+    return result.notes.some((note) => /timeout|aborted/i.test(note));
+  }, [result]);
+
   const startCamera = async () => {
     setError("");
     try {
@@ -121,6 +126,8 @@ export default function App() {
         </button>
       </div>
 
+      <p className="hint">First scan can take up to 60 seconds while vision models warm up. If timeout appears, retry once.</p>
+
       {error ? <p className="error">{error}</p> : null}
 
       <video ref={videoRef} className="video" playsInline muted />
@@ -129,6 +136,7 @@ export default function App() {
       {result ? (
         <section className="card">
           <h2>Scan Result</h2>
+          {hasVisionTimeout ? <p className="warning">Vision model is still warming up. Please keep camera on car and scan again.</p> : null}
           <p>
             <strong>Vehicle Detected:</strong> {result.vehicleDetected ? "Yes" : "No"} ({Math.round(result.vehicleConfidence * 100)}%)
           </p>

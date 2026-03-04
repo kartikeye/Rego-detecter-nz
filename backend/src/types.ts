@@ -15,9 +15,16 @@ export interface VehicleLookupResult {
   rawPayload?: unknown;
 }
 
+export interface VehicleClassificationCandidate {
+  make: string;
+  model: string;
+  bodyType?: string | null;
+}
+
 export interface VehicleLookupProvider {
   readonly name: string;
   lookupByRego(rego: string): Promise<VehicleLookupResult>;
+  getClassificationCandidates(): VehicleClassificationCandidate[];
 }
 
 export interface VisionScanResult {

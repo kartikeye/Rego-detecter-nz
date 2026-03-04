@@ -1,4 +1,8 @@
-import type { VehicleLookupProvider, VehicleLookupResult } from "../types.js";
+import type {
+  VehicleClassificationCandidate,
+  VehicleLookupProvider,
+  VehicleLookupResult
+} from "../types.js";
 
 const db: Record<string, Omit<VehicleLookupResult, "source" | "fetchedAt" | "confidence">> = {
   ABC123: {
@@ -20,11 +24,42 @@ const db: Record<string, Omit<VehicleLookupResult, "source" | "fetchedAt" | "con
     bodyType: "Hatchback",
     stolenFlag: "true",
     notes: ["Demo potential stolen scenario"]
+  },
+  LMB724: {
+    rego: "LMB724",
+    make: "Audi",
+    model: "A6",
+    year: 2008,
+    color: "Silver",
+    bodyType: "Sedan",
+    stolenFlag: "false",
+    notes: ["Demo record for Audi A6 verification"]
   }
 };
 
 export class MockVehicleLookupProvider implements VehicleLookupProvider {
   public readonly name = "mock";
+
+  public getClassificationCandidates(): VehicleClassificationCandidate[] {
+    const candidates = new Map<string, VehicleClassificationCandidate>();
+
+    for (const record of Object.values(db)) {
+      if (!record.make || !record.model) {
+        continue;
+      }
+
+      const key = `${record.make.toLowerCase()}::${record.model.toLowerCase()}::${(record.bodyType ?? "").toLowerCase()}`;
+      if (!candidates.has(key)) {
+        candidates.set(key, {
+          make: record.make,
+          model: record.model,
+          bodyType: record.bodyType ?? null
+        });
+      }
+    }
+
+    return Array.from(candidates.values());
+  }
 
   public async lookupByRego(rego: string): Promise<VehicleLookupResult> {
     const normalizedRego = rego.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
