@@ -40,6 +40,15 @@ def _decode_data_url(data_url: str) -> np.ndarray | None:
     if not data_url or "," not in data_url:
         return None
 
+    try:
+        encoded = data_url.split(",", 1)[1]
+        raw = base64.b64decode(encoded)
+        arr = np.frombuffer(raw, dtype=np.uint8)
+        image = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+        return image
+    except Exception:
+        return None
+
 
 def _load_vehicle_model() -> YOLO:
     global _vehicle_model
@@ -63,15 +72,6 @@ def _load_ocr_reader() -> easyocr.Reader:
             _ocr_reader = easyocr.Reader(["en"], gpu=False)
 
     return _ocr_reader
-
-    try:
-        encoded = data_url.split(",", 1)[1]
-        raw = base64.b64decode(encoded)
-        arr = np.frombuffer(raw, dtype=np.uint8)
-        image = cv2.imdecode(arr, cv2.IMREAD_COLOR)
-        return image
-    except Exception:
-        return None
 
 
 def _detect_primary_vehicle(image: np.ndarray) -> tuple[bool, float, tuple[int, int, int, int] | None]:
